@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quiz Instagram Borne2Play
 
-## Getting Started
+App de test end-to-end pour l'outil de quiz Instagram hebdomadaire de Borne2Play :
+parcours participant (accueil, questions, fin) et parcours admin (publication,
+clôture, classement), connectés à la vraie base Supabase.
 
-First, run the development server:
+## Démarrer
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000) pour le parcours participant,
+et [http://localhost:3000/admin](http://localhost:3000/admin) pour l'admin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Les variables d'environnement vivent dans `.env.local` (non commité) :
 
-## Learn More
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` : utilisées
+  côté navigateur pour le parcours participant (lecture des quiz/questions ouverts,
+  RPC `has_participated` et `submit_participation`).
+- `SUPABASE_SERVICE_ROLE_KEY` : utilisée uniquement côté serveur (routes
+  `src/app/api/admin/*`) pour créer/clôturer les quiz et lire le classement.
+  Ne jamais exposer cette clé au client.
+- `ADMIN_TOKEN` : jeton simple protégeant les routes admin (généré aléatoirement
+  lors du setup). À saisir dans l'écran de connexion de `/admin`.
 
-To learn more about Next.js, take a look at the following resources:
+Voir `.env.local.example` pour le format attendu.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Format du fichier JSON d'import (admin)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```json
+{
+  "theme": "Thème du quiz",
+  "questions": [
+    {
+      "question_text": "...",
+      "choice_a": "...",
+      "choice_b": "...",
+      "choice_c": "...",
+      "choice_d": "...",
+      "correct_choice": "A"
+    }
+  ]
+}
+```
 
-## Deploy on Vercel
+## Test end-to-end automatisé
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Le script `scripts/e2e-test.mjs` crée un quiz de test, le publie, soumet une
+participation, vérifie le score calculé côté serveur, vérifie qu'une deuxième
+participation avec le même pseudo est bloquée, clôture le quiz, vérifie qu'une
+nouvelle participation est refusée, puis nettoie les données de test créées.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+node --env-file=.env.local scripts/e2e-test.mjs
+```
