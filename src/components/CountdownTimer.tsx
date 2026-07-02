@@ -7,8 +7,11 @@ interface Remaining {
   hours: number;
   minutes: number;
   seconds: number;
+  totalMs: number;
   expired: boolean;
 }
+
+const URGENT_THRESHOLD_MS = 60 * 60 * 1000;
 
 function computeRemaining(target: string): Remaining {
   const diff = Math.max(0, new Date(target).getTime() - Date.now());
@@ -18,6 +21,7 @@ function computeRemaining(target: string): Remaining {
     hours: Math.floor((totalSeconds % 86400) / 3600),
     minutes: Math.floor((totalSeconds % 3600) / 60),
     seconds: totalSeconds % 60,
+    totalMs: diff,
     expired: diff <= 0,
   };
 }
@@ -34,6 +38,7 @@ export function CountdownTimer({ target }: { target: string }) {
 
   if (!remaining || remaining.expired) return null;
 
+  const urgent = remaining.totalMs < URGENT_THRESHOLD_MS;
   const pad = (n: number) => String(n).padStart(2, "0");
   const units = [
     { label: "jours", value: remaining.days },
@@ -44,11 +49,22 @@ export function CountdownTimer({ target }: { target: string }) {
 
   return (
     <div className="text-center">
-      <p className="font-display text-sm text-b2p-blue mb-2">⏳ Fermeture dans</p>
+      <p
+        className={`font-display text-sm mb-2 ${
+          urgent ? "text-b2p-red countdown-urgent-label" : "text-b2p-blue"
+        }`}
+      >
+        {urgent ? "⚠️ Dernière chance, ça ferme bientôt !" : "⏳ Fermeture dans"}
+      </p>
       <div className="flex justify-center gap-3">
         {units.map((unit) => (
           <div key={unit.label} className="flex flex-col items-center">
-            <span className="sticker-chip bg-b2p-blue text-white font-display px-3 py-2 min-w-16 text-center text-2xl">
+            <span
+              key={unit.value}
+              className={`sticker-chip font-display px-3 py-2 min-w-16 text-center text-2xl countdown-tick ${
+                urgent ? "bg-b2p-red text-white countdown-urgent" : "bg-b2p-blue text-white"
+              }`}
+            >
               {pad(unit.value)}
             </span>
             <span className="text-xs uppercase mt-1.5 tracking-wide">{unit.label}</span>

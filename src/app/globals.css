@@ -89,4 +89,48 @@ body {
     border-radius: 9999px;
     box-shadow: 3px 3px 0 var(--b2p-black);
   }
+
+  .countdown-tick {
+    animation: countdown-tick 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .countdown-urgent {
+    animation: countdown-urgent-pulse 1s ease-in-out infinite;
+  }
+
+  .countdown-urgent-label {
+    animation: countdown-urgent-flash 1s ease-in-out infinite;
+  }
+}
+
+@keyframes countdown-tick {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes countdown-urgent-pulse {
+  0%,
+  100% {
+    box-shadow: 3px 3px 0 var(--b2p-black), 0 0 0 0 rgba(196, 47, 33, 0.55);
+  }
+  50% {
+    box-shadow: 3px 3px 0 var(--b2p-black), 0 0 12px 4px rgba(196, 47, 33, 0.55);
+  }
+}
+
+@keyframes countdown-urgent-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
