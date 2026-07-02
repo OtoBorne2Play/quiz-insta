@@ -110,13 +110,6 @@ export default function HomePage() {
 
       {loadState === "empty" && (
         <div className="sticker-card px-6 py-8 text-center max-w-md">
-          <Image
-            src="/assets/mascotte.png"
-            alt="Mascotte Borne2Play"
-            width={140}
-            height={134}
-            className="mx-auto mb-4"
-          />
           <p className="font-display text-2xl mb-2">Pas de quiz en ce moment</p>
           <p>Reviens bientôt, un nouveau quiz arrive chaque semaine !</p>
         </div>
@@ -124,13 +117,6 @@ export default function HomePage() {
 
       {loadState === "ready" && quiz && (
         <div className="w-full max-w-md flex flex-col items-center gap-6">
-          <Image
-            src="/assets/mascotte.png"
-            alt="Mascotte Borne2Play"
-            width={160}
-            height={153}
-          />
-
           <div className="sticker-card w-full px-6 py-6 flex flex-col gap-4">
             <div className="text-center">
               <span className="sticker-chip inline-block px-4 py-1 bg-b2p-gold font-display text-sm">

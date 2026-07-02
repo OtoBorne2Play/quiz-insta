@@ -8,12 +8,6 @@ export default function MerciPage() {
       <Image src="/assets/logo.png" alt="Borne2Play" width={280} height={105} />
 
       <div className="sticker-card px-8 py-10 text-center max-w-md flex flex-col items-center gap-4">
-        <Image
-          src="/assets/mascotte.png"
-          alt="Mascotte Borne2Play"
-          width={160}
-          height={153}
-        />
         <h1 className="font-display text-2xl text-b2p-blue">
           Réponse enregistrée !
         </h1>
