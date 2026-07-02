@@ -44,14 +44,14 @@ export function CountdownTimer({ target }: { target: string }) {
 
   return (
     <div className="text-center">
-      <p className="font-display text-xs text-b2p-blue mb-1">⏳ Fermeture dans</p>
-      <div className="flex justify-center gap-2">
+      <p className="font-display text-sm text-b2p-blue mb-2">⏳ Fermeture dans</p>
+      <div className="flex justify-center gap-3">
         {units.map((unit) => (
           <div key={unit.label} className="flex flex-col items-center">
-            <span className="sticker-chip bg-b2p-blue text-white font-display px-2 py-1 min-w-10 text-center">
+            <span className="sticker-chip bg-b2p-blue text-white font-display px-3 py-2 min-w-16 text-center text-2xl">
               {pad(unit.value)}
             </span>
-            <span className="text-[10px] uppercase mt-1">{unit.label}</span>
+            <span className="text-xs uppercase mt-1.5 tracking-wide">{unit.label}</span>
           </div>
         ))}
       </div>
