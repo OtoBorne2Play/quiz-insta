@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { INSTAGRAM_URL } from "@/lib/constants";
 import type { Choice, Question } from "@/lib/types";
 
 type LoadState = "loading" | "ready" | "closed" | "error";
@@ -19,6 +21,8 @@ const CHOICE_KEYS: { key: Choice; field: keyof Question }[] = [
   { key: "D", field: "choice_d" },
 ];
 
+const TRANSITION_MS = 320;
+
 async function submitQuizParticipation(args: {
   quizId: string;
   pseudo: string;
@@ -34,6 +38,24 @@ async function submitQuizParticipation(args: {
   });
 }
 
+function ExitOptions() {
+  return (
+    <div className="flex flex-col items-center gap-3 mt-2">
+      <a
+        href={INSTAGRAM_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sticker-btn bg-b2p-red text-white px-5 py-2 text-sm font-display"
+      >
+        Suivre @_borne2play_ sur Instagram
+      </a>
+      <Link href="/" className="font-display text-b2p-blue text-sm underline">
+        Retour à l&apos;accueil
+      </Link>
+    </div>
+  );
+}
+
 export default function QuizPage() {
   const { quizId } = useParams<{ quizId: string }>();
   const router = useRouter();
@@ -42,9 +64,12 @@ export default function QuizPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, Choice>>({});
+  const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+  const [pseudo, setPseudo] = useState("");
 
   const sessionRef = useRef<SessionInfo | null>(null);
   const startTimeRef = useRef(0);
@@ -66,10 +91,11 @@ export default function QuizPage() {
         return;
       }
       sessionRef.current = parsed;
+      setPseudo(parsed.pseudo);
 
       const { data: quiz, error: quizError } = await supabase
         .from("quizzes")
-        .select("status")
+        .select("status, auto_close_at")
         .eq("id", quizId)
         .maybeSingle();
 
@@ -80,7 +106,10 @@ export default function QuizPage() {
         return;
       }
 
-      if (quiz.status !== "open") {
+      const expired =
+        quiz.auto_close_at !== null && new Date(quiz.auto_close_at).getTime() < Date.now();
+
+      if (quiz.status !== "open" || expired) {
         setLoadState("closed");
         return;
       }
@@ -143,17 +172,24 @@ export default function QuizPage() {
     router.push("/merci");
   }
 
-  function handleAnswer(choice: Choice) {
-    const question = questions[currentIndex];
-    const updated = { ...answers, [question.question_order]: choice };
-    setAnswers(updated);
+  function handleValidate() {
+    if (!selectedChoice || transitioning) return;
 
-    const isLast = currentIndex === questions.length - 1;
-    if (isLast) {
-      submitParticipation(updated);
-    } else {
-      setCurrentIndex((i) => i + 1);
-    }
+    const question = questions[currentIndex];
+    const updated = { ...answers, [question.question_order]: selectedChoice };
+    setAnswers(updated);
+    setTransitioning(true);
+
+    window.setTimeout(() => {
+      const isLast = currentIndex === questions.length - 1;
+      if (isLast) {
+        submitParticipation(updated);
+      } else {
+        setCurrentIndex((i) => i + 1);
+        setSelectedChoice(null);
+        setTransitioning(false);
+      }
+    }, TRANSITION_MS);
   }
 
   if (loadState === "loading") {
@@ -172,6 +208,7 @@ export default function QuizPage() {
             Ce quiz est clôturé.
           </p>
           <p>Merci de ta visite, un nouveau quiz arrive bientôt !</p>
+          <ExitOptions />
         </div>
       </main>
     );
@@ -194,6 +231,7 @@ export default function QuizPage() {
           <p className="font-display text-xl text-b2p-red">
             Tu as déjà participé à ce quiz.
           </p>
+          <ExitOptions />
         </div>
       </main>
     );
@@ -205,33 +243,59 @@ export default function QuizPage() {
   return (
     <main className="flex-1 flex flex-col items-center px-4 py-8 gap-6">
       <div className="w-full max-w-md">
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-display text-sm text-b2p-blue">
+            Question {currentIndex + 1} / {questions.length}
+          </p>
+          {pseudo && <p className="text-xs text-b2p-black/60">@{pseudo}</p>}
+        </div>
         <div className="sticker-chip h-5 bg-white overflow-hidden">
           <div
             className="h-full bg-b2p-gold transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-center mt-2 font-display text-sm text-b2p-blue">
-          Question {currentIndex + 1} / {questions.length}
-        </p>
       </div>
 
-      <div className="sticker-card w-full max-w-md px-6 py-6 flex flex-col gap-4">
+      <div
+        className={`sticker-card w-full max-w-md px-6 py-6 flex flex-col gap-4 transition-all duration-300 ${
+          transitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        }`}
+      >
         <h1 className="font-display text-xl text-center">{question.question_text}</h1>
 
         <div className="flex flex-col gap-3">
-          {CHOICE_KEYS.map(({ key, field }) => (
-            <button
-              key={key}
-              onClick={() => handleAnswer(key)}
-              disabled={submitting}
-              className="sticker-btn bg-b2p-blue text-white px-4 py-3 text-left font-sans font-semibold"
-            >
-              <span className="font-display mr-2">{key}.</span>
-              {question[field] as string}
-            </button>
-          ))}
+          {CHOICE_KEYS.map(({ key, field }) => {
+            const isSelected = selectedChoice === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setSelectedChoice(key)}
+                disabled={submitting || transitioning}
+                className={`sticker-btn px-4 py-3 text-left font-sans font-semibold transition-all duration-150 ${
+                  isSelected
+                    ? "bg-b2p-gold text-b2p-black scale-[1.02]"
+                    : "bg-b2p-blue text-white"
+                }`}
+              >
+                <span className="font-display mr-2">{key}.</span>
+                {question[field] as string}
+                {isSelected && <span className="float-right">✓</span>}
+              </button>
+            );
+          })}
         </div>
+
+        <button
+          onClick={handleValidate}
+          disabled={!selectedChoice || submitting || transitioning}
+          className="sticker-btn bg-b2p-red text-white px-6 py-3 font-display disabled:bg-b2p-black/20 disabled:text-b2p-black/40"
+        >
+          ✓ Valider ma réponse
+        </button>
+        <p className="text-center text-xs text-b2p-black/60">
+          Attention : impossible de revenir en arrière après validation.
+        </p>
 
         {submitting && (
           <p className="text-center font-display text-b2p-blue">Envoi en cours…</p>

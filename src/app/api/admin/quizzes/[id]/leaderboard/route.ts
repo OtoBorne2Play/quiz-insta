@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { isAuthorizedAdmin } from "@/lib/adminAuth";
+import { authorizeAdmin } from "@/lib/adminAuth";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!isAuthorizedAdmin(request)) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  const auth = await authorizeAdmin(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message }, { status: auth.status });
   }
 
   const { id } = await params;

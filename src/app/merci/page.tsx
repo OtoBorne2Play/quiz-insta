@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-
-const INSTAGRAM_URL =
-  "https://www.instagram.com/_borne2play_?igsh=MWRhdWtoNWtzdmlneQ%3D%3D&utm_source=qr";
+import { INSTAGRAM_URL } from "@/lib/constants";
 
 export default function MerciPage() {
   return (

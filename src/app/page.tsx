@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { INSTAGRAM_URL } from "@/lib/constants";
+import { CountdownTimer } from "@/components/CountdownTimer";
 import type { Quiz } from "@/lib/types";
 
 type LoadState = "loading" | "ready" | "empty" | "error";
@@ -24,9 +27,10 @@ export default function HomePage() {
       const { data, error } = await supabase
         .from("quizzes")
         .select(
-          "id, theme, status, opened_at, closed_at, created_at, prize_first, prize_second, prize_third"
+          "id, theme, status, opened_at, closed_at, created_at, prize_first, prize_second, prize_third, archived, auto_close_at"
         )
         .eq("status", "open")
+        .or(`auto_close_at.is.null,auto_close_at.gt.${new Date().toISOString()}`)
         .order("opened_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -54,7 +58,7 @@ export default function HomePage() {
   }, []);
 
   async function handleStart() {
-    const trimmed = pseudo.trim().replace(/^@/, "");
+    const trimmed = pseudo.trim().replace(/^@/, "").toLowerCase();
     if (!trimmed) {
       setFormError("Indique ton pseudo Instagram pour commencer.");
       return;
@@ -135,6 +139,8 @@ export default function HomePage() {
               <h1 className="font-display text-2xl mt-3">{quiz.theme}</h1>
             </div>
 
+            {quiz.auto_close_at && <CountdownTimer target={quiz.auto_close_at} />}
+
             <div className="text-sm leading-relaxed">
               <p className="font-display text-b2p-blue mb-1">Règles du jeu</p>
               <ul className="list-disc list-inside space-y-1">
@@ -173,10 +179,21 @@ export default function HomePage() {
             </div>
 
             {alreadyPlayed ? (
-              <div className="sticker-chip bg-b2p-red/10 px-4 py-3 text-center">
+              <div className="sticker-chip bg-b2p-red/10 px-4 py-3 text-center flex flex-col items-center gap-3">
                 <p className="font-display text-b2p-red">
                   Tu as déjà participé à ce quiz.
                 </p>
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sticker-btn bg-b2p-red text-white px-5 py-2 text-sm font-display"
+                >
+                  Suivre @_borne2play_ sur Instagram
+                </a>
+                <Link href="/" className="font-display text-b2p-blue text-sm underline">
+                  Retour à l&apos;accueil
+                </Link>
               </div>
             ) : (
               <div className="flex flex-col gap-3">

@@ -11,6 +11,8 @@ export interface Quiz {
   prize_first: string | null;
   prize_second: string | null;
   prize_third: string | null;
+  archived: boolean;
+  auto_close_at: string | null;
 }
 
 export interface Question {

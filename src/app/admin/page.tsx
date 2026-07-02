@@ -41,6 +41,11 @@ export default function AdminPage() {
   const [savingPrizesId, setSavingPrizesId] = useState<string | null>(null);
   const [prizeSaveError, setPrizeSaveError] = useState<Record<string, string>>({});
 
+  const [autoCloseHours, setAutoCloseHours] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   function prizeDraftFor(quiz: Quiz) {
     return (
       prizeDrafts[quiz.id] ?? {
@@ -62,22 +67,26 @@ export default function AdminPage() {
     }));
   }
 
-  const loadQuizzes = useCallback(async (activeToken: string) => {
-    const res = await fetch("/api/admin/quizzes", {
-      headers: { "x-admin-token": activeToken },
-    });
-    if (res.status === 401) {
-      return false;
-    }
-    const body = await res.json();
-    if (!res.ok) {
-      setListError(body.error ?? "Erreur inconnue");
+  const loadQuizzes = useCallback(
+    async (activeToken: string, includeArchived = false) => {
+      const res = await fetch(
+        `/api/admin/quizzes${includeArchived ? "?archived=1" : ""}`,
+        { headers: { "x-admin-token": activeToken } }
+      );
+      if (res.status === 401) {
+        return false;
+      }
+      const body = await res.json();
+      if (!res.ok) {
+        setListError(body.error ?? "Erreur inconnue");
+        return true;
+      }
+      setListError(null);
+      setQuizzes(body.quizzes);
       return true;
-    }
-    setListError(null);
-    setQuizzes(body.quizzes);
-    return true;
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     const stored = sessionStorage.getItem(TOKEN_KEY);
@@ -165,7 +174,10 @@ export default function AdminPage() {
         "Content-Type": "application/json",
         "x-admin-token": token,
       },
-      body: JSON.stringify(importData),
+      body: JSON.stringify({
+        ...importData,
+        auto_close_hours: autoCloseHours ? Number(autoCloseHours) : null,
+      }),
     });
 
     const body = await res.json();
@@ -177,7 +189,52 @@ export default function AdminPage() {
     }
 
     setImportData(null);
-    await loadQuizzes(token);
+    setAutoCloseHours("");
+    await loadQuizzes(token, showArchived);
+  }
+
+  async function handleArchive(quiz: Quiz) {
+    if (!token) return;
+    setArchivingId(quiz.id);
+
+    const res = await fetch(`/api/admin/quizzes/${quiz.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-token": token,
+      },
+      body: JSON.stringify({ archived: true }),
+    });
+
+    setArchivingId(null);
+
+    if (res.ok) {
+      await loadQuizzes(token, showArchived);
+    }
+  }
+
+  async function handleDelete(quiz: Quiz) {
+    if (!token) return;
+    const confirmed = window.confirm(
+      `Supprimer définitivement le quiz "${quiz.theme}" et toutes ses participations ? Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(quiz.id);
+    const res = await fetch(`/api/admin/quizzes/${quiz.id}`, {
+      method: "DELETE",
+      headers: { "x-admin-token": token },
+    });
+    setDeletingId(null);
+
+    if (res.ok) {
+      await loadQuizzes(token, showArchived);
+    }
+  }
+
+  async function handleToggleArchivedView(checked: boolean) {
+    setShowArchived(checked);
+    if (token) await loadQuizzes(token, checked);
   }
 
   async function handleClose(quizId: string) {
@@ -321,6 +378,23 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-display text-sm text-b2p-blue" htmlFor="auto-close">
+                Clôture automatique (filet de sécurité si vous oubliez de clôturer)
+              </label>
+              <select
+                id="auto-close"
+                value={autoCloseHours}
+                onChange={(e) => setAutoCloseHours(e.target.value)}
+                className="border-2 border-b2p-black rounded-full px-3 py-2 text-sm outline-none w-fit"
+              >
+                <option value="">Manuel (pas de clôture auto)</option>
+                <option value="24">24 heures</option>
+                <option value="48">48 heures</option>
+                <option value="72">72 heures</option>
+                <option value="168">7 jours</option>
+              </select>
+            </div>
             {publishError && <p className="text-b2p-red text-sm">{publishError}</p>}
             <button
               onClick={handlePublish}
@@ -334,7 +408,17 @@ export default function AdminPage() {
       </section>
 
       <section className="w-full max-w-2xl flex flex-col gap-4">
-        <h2 className="font-display text-xl text-b2p-blue">Quiz existants</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl text-b2p-blue">Quiz existants</h2>
+          <label className="flex items-center gap-2 text-sm font-display">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => handleToggleArchivedView(e.target.checked)}
+            />
+            Voir les archivés
+          </label>
+        </div>
         {listError && <p className="text-b2p-red text-sm">{listError}</p>}
 
         {quizzes.map((quiz) => (
@@ -342,19 +426,31 @@ export default function AdminPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <p className="font-display text-lg">{quiz.theme}</p>
-                <span
-                  className={`sticker-chip inline-block px-3 py-0.5 text-xs font-display ${
-                    quiz.status === "open"
-                      ? "bg-b2p-gold"
-                      : quiz.status === "closed"
-                        ? "bg-b2p-black text-white"
-                        : "bg-white"
-                  }`}
-                >
-                  {quiz.status}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`sticker-chip inline-block px-3 py-0.5 text-xs font-display ${
+                      quiz.status === "open"
+                        ? "bg-b2p-gold"
+                        : quiz.status === "closed"
+                          ? "bg-b2p-black text-white"
+                          : "bg-white"
+                    }`}
+                  >
+                    {quiz.status}
+                  </span>
+                  {quiz.archived && (
+                    <span className="sticker-chip inline-block px-3 py-0.5 text-xs font-display bg-white">
+                      archivé
+                    </span>
+                  )}
+                  {quiz.status === "open" && quiz.auto_close_at && (
+                    <span className="text-xs text-b2p-blue">
+                      Clôture auto : {new Date(quiz.auto_close_at).toLocaleString("fr-FR")}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {quiz.status === "open" && (
                   <button
                     onClick={() => handleClose(quiz.id)}
@@ -364,6 +460,22 @@ export default function AdminPage() {
                     {closingId === quiz.id ? "…" : "Clôturer"}
                   </button>
                 )}
+                {quiz.status === "closed" && !quiz.archived && (
+                  <button
+                    onClick={() => handleArchive(quiz)}
+                    disabled={archivingId === quiz.id}
+                    className="sticker-btn bg-b2p-gold text-b2p-black px-4 py-2 text-sm font-display"
+                  >
+                    {archivingId === quiz.id ? "…" : "Archiver"}
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(quiz)}
+                  disabled={deletingId === quiz.id}
+                  className="sticker-btn bg-b2p-red text-white px-4 py-2 text-sm font-display"
+                >
+                  {deletingId === quiz.id ? "…" : "Supprimer"}
+                </button>
                 <button
                   onClick={() => toggleLeaderboard(quiz.id)}
                   disabled={leaderboardLoadingId === quiz.id}
