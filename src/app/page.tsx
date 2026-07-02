@@ -141,37 +141,55 @@ export default function HomePage() {
 
             {quiz.auto_close_at && <CountdownTimer target={quiz.auto_close_at} />}
 
-            <div className="text-sm leading-relaxed">
-              <p className="font-display text-b2p-blue mb-1">Règles du jeu</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Réponds à toutes les questions, une par une.</li>
-                <li>Pas de retour en arrière possible une fois validé.</li>
-                <li>Une seule participation par pseudo Instagram.</li>
-              </ul>
+            <div>
+              <p className="font-display text-b2p-blue mb-2">📋 Règles du jeu</p>
+              <div className="flex flex-col gap-1.5 text-sm">
+                <p className="rule-row">Réponds à toutes les questions, une par une.</p>
+                <p className="rule-row">Pas de retour en arrière possible une fois validé.</p>
+                <p className="rule-row">Une seule participation par pseudo Instagram.</p>
+              </div>
             </div>
 
-            <div className="text-sm leading-relaxed sticker-chip bg-b2p-gold/20 px-4 py-3">
-              <p className="font-display text-b2p-red mb-1">🏆 Lots à gagner</p>
+            <div>
+              <p className="font-display text-b2p-red mb-2">🏆 À gagner cette semaine</p>
               {quiz.prize_first || quiz.prize_second || quiz.prize_third ? (
-                <ul className="space-y-1">
+                <div className="flex flex-col gap-2">
                   {quiz.prize_first && (
-                    <li>
-                      <span className="font-display">🥇 1er :</span> {quiz.prize_first}
-                    </li>
+                    <div
+                      className="prize-row flex items-center gap-3 px-3 py-2"
+                      style={{ "--prize-accent": "var(--b2p-gold)" } as React.CSSProperties}
+                    >
+                      <span className="prize-medal w-7 h-7 flex items-center justify-center text-sm shrink-0">
+                        1
+                      </span>
+                      <p className="text-sm">{quiz.prize_first}</p>
+                    </div>
                   )}
                   {quiz.prize_second && (
-                    <li>
-                      <span className="font-display">🥈 2e :</span> {quiz.prize_second}
-                    </li>
+                    <div
+                      className="prize-row flex items-center gap-3 px-3 py-2"
+                      style={{ "--prize-accent": "var(--b2p-blue)" } as React.CSSProperties}
+                    >
+                      <span className="prize-medal w-7 h-7 flex items-center justify-center text-sm shrink-0 text-white">
+                        2
+                      </span>
+                      <p className="text-sm">{quiz.prize_second}</p>
+                    </div>
                   )}
                   {quiz.prize_third && (
-                    <li>
-                      <span className="font-display">🥉 3e :</span> {quiz.prize_third}
-                    </li>
+                    <div
+                      className="prize-row flex items-center gap-3 px-3 py-2"
+                      style={{ "--prize-accent": "var(--b2p-red)" } as React.CSSProperties}
+                    >
+                      <span className="prize-medal w-7 h-7 flex items-center justify-center text-sm shrink-0 text-white">
+                        3
+                      </span>
+                      <p className="text-sm">{quiz.prize_third}</p>
+                    </div>
                   )}
-                </ul>
+                </div>
               ) : (
-                <p>
+                <p className="text-sm sticker-chip bg-b2p-gold/20 px-4 py-3">
                   Tente de remporter des heures de jeu gratuites, des goodies
                   Borne2Play et la première place au classement de la semaine !
                 </p>

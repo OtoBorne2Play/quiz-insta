@@ -247,7 +247,7 @@ export default function QuizPage() {
           <p className="font-display text-sm text-b2p-blue">
             Question {currentIndex + 1} / {questions.length}
           </p>
-          {pseudo && <p className="text-xs text-b2p-black/60">@{pseudo}</p>}
+          {pseudo && <p className="text-xs text-foreground/60">@{pseudo}</p>}
         </div>
         <div className="sticker-chip h-5 bg-white overflow-hidden">
           <div

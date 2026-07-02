@@ -5,8 +5,8 @@
   --b2p-blue: #1b71b3;
   --b2p-red: #c42f21;
   --b2p-gold: #ebb92c;
-  --background: #f4ede1;
-  --foreground: var(--b2p-black);
+  --background: #111010;
+  --foreground: #f4ede1;
 }
 
 @theme inline {
@@ -37,6 +37,33 @@ body {
     border-radius: 1.5rem;
     box-shadow: 6px 6px 0 var(--b2p-black);
     background: white;
+    color: var(--b2p-black);
+  }
+
+  .rule-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .rule-row::before {
+    content: "▸";
+    color: var(--b2p-red);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .prize-row {
+    border-left: 5px solid var(--prize-accent, var(--b2p-gold));
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--prize-accent, var(--b2p-gold)) 12%, white);
+  }
+
+  .prize-medal {
+    border-radius: 9999px;
+    background: var(--prize-accent, var(--b2p-gold));
+    color: var(--b2p-black);
+    font-family: var(--font-baloo);
   }
 
   .sticker-btn {
