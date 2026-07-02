@@ -237,11 +237,16 @@ export default function AdminPage() {
     if (token) await loadQuizzes(token, checked);
   }
 
-  async function handleClose(quizId: string) {
+  async function handleClose(quiz: Quiz) {
     if (!token) return;
-    setClosingId(quizId);
+    const confirmed = window.confirm(
+      `Clôturer le quiz "${quiz.theme}" ? Plus personne ne pourra y participer après ça.`
+    );
+    if (!confirmed) return;
 
-    const res = await fetch(`/api/admin/quizzes/${quizId}/close`, {
+    setClosingId(quiz.id);
+
+    const res = await fetch(`/api/admin/quizzes/${quiz.id}/close`, {
       method: "POST",
       headers: { "x-admin-token": token },
     });
@@ -249,7 +254,7 @@ export default function AdminPage() {
     setClosingId(null);
 
     if (res.ok) {
-      await loadQuizzes(token);
+      await loadQuizzes(token, showArchived);
     }
   }
 
@@ -450,32 +455,7 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {quiz.status === "open" && (
-                  <button
-                    onClick={() => handleClose(quiz.id)}
-                    disabled={closingId === quiz.id}
-                    className="sticker-btn bg-b2p-black text-white px-4 py-2 text-sm font-display"
-                  >
-                    {closingId === quiz.id ? "…" : "Clôturer"}
-                  </button>
-                )}
-                {quiz.status === "closed" && !quiz.archived && (
-                  <button
-                    onClick={() => handleArchive(quiz)}
-                    disabled={archivingId === quiz.id}
-                    className="sticker-btn bg-b2p-gold text-b2p-black px-4 py-2 text-sm font-display"
-                  >
-                    {archivingId === quiz.id ? "…" : "Archiver"}
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDelete(quiz)}
-                  disabled={deletingId === quiz.id}
-                  className="sticker-btn bg-b2p-red text-white px-4 py-2 text-sm font-display"
-                >
-                  {deletingId === quiz.id ? "…" : "Supprimer"}
-                </button>
+              <div className="flex items-center justify-between gap-3 flex-wrap w-full sm:w-auto">
                 <button
                   onClick={() => toggleLeaderboard(quiz.id)}
                   disabled={leaderboardLoadingId === quiz.id}
@@ -483,6 +463,34 @@ export default function AdminPage() {
                 >
                   {leaderboards[quiz.id] ? "Masquer" : "Classement"}
                 </button>
+
+                <div className="flex gap-2 flex-wrap">
+                  {quiz.status === "closed" && !quiz.archived && (
+                    <button
+                      onClick={() => handleArchive(quiz)}
+                      disabled={archivingId === quiz.id}
+                      className="sticker-btn bg-b2p-gold text-b2p-black px-4 py-2 text-sm font-display"
+                    >
+                      {archivingId === quiz.id ? "…" : "Archiver"}
+                    </button>
+                  )}
+                  {quiz.status === "open" && (
+                    <button
+                      onClick={() => handleClose(quiz)}
+                      disabled={closingId === quiz.id}
+                      className="sticker-btn bg-b2p-black text-white px-4 py-2 text-sm font-display"
+                    >
+                      {closingId === quiz.id ? "…" : "Clôturer"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(quiz)}
+                    disabled={deletingId === quiz.id}
+                    className="sticker-btn bg-b2p-red text-white px-4 py-2 text-sm font-display"
+                  >
+                    {deletingId === quiz.id ? "…" : "Supprimer"}
+                  </button>
+                </div>
               </div>
             </div>
 
