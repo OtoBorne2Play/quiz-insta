@@ -28,6 +28,7 @@ export default function AdminPage() {
   const [publishError, setPublishError] = useState<string | null>(null);
 
   const [closingId, setClosingId] = useState<string | null>(null);
+  const [reopeningId, setReopeningId] = useState<string | null>(null);
   const [leaderboards, setLeaderboards] = useState<
     Record<string, LeaderboardEntry[]>
   >({});
@@ -207,6 +208,22 @@ export default function AdminPage() {
     });
 
     setArchivingId(null);
+
+    if (res.ok) {
+      await loadQuizzes(token, showArchived);
+    }
+  }
+
+  async function handleReopen(quiz: Quiz) {
+    if (!token) return;
+    setReopeningId(quiz.id);
+
+    const res = await fetch(`/api/admin/quizzes/${quiz.id}/reopen`, {
+      method: "POST",
+      headers: { "x-admin-token": token },
+    });
+
+    setReopeningId(null);
 
     if (res.ok) {
       await loadQuizzes(token, showArchived);
@@ -455,42 +472,52 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-3 flex-wrap w-full sm:w-auto">
-                <button
-                  onClick={() => toggleLeaderboard(quiz.id)}
-                  disabled={leaderboardLoadingId === quiz.id}
-                  className="sticker-btn bg-b2p-blue text-white px-4 py-2 text-sm font-display"
-                >
-                  {leaderboards[quiz.id] ? "Masquer" : "Classement"}
-                </button>
+              <button
+                onClick={() => toggleLeaderboard(quiz.id)}
+                disabled={leaderboardLoadingId === quiz.id}
+                className="sticker-btn bg-b2p-blue text-white px-4 py-2 text-sm font-display"
+              >
+                {leaderboards[quiz.id] ? "Masquer le classement" : "Voir le classement"}
+              </button>
+            </div>
 
-                <div className="flex gap-2 flex-wrap">
-                  {quiz.status === "closed" && !quiz.archived && (
-                    <button
-                      onClick={() => handleArchive(quiz)}
-                      disabled={archivingId === quiz.id}
-                      className="sticker-btn bg-b2p-gold text-b2p-black px-4 py-2 text-sm font-display"
-                    >
-                      {archivingId === quiz.id ? "…" : "Archiver"}
-                    </button>
-                  )}
-                  {quiz.status === "open" && (
-                    <button
-                      onClick={() => handleClose(quiz)}
-                      disabled={closingId === quiz.id}
-                      className="sticker-btn bg-b2p-black text-white px-4 py-2 text-sm font-display"
-                    >
-                      {closingId === quiz.id ? "…" : "Clôturer"}
-                    </button>
-                  )}
+            <div className="flex flex-col gap-1.5 border-t border-b2p-black/20 pt-3">
+              <p className="text-xs text-b2p-black/50">Actions sur le quiz</p>
+              <div className="flex gap-2 flex-wrap">
+                {quiz.status === "closed" && (
                   <button
-                    onClick={() => handleDelete(quiz)}
-                    disabled={deletingId === quiz.id}
-                    className="sticker-btn bg-b2p-red text-white px-4 py-2 text-sm font-display"
+                    onClick={() => handleReopen(quiz)}
+                    disabled={reopeningId === quiz.id}
+                    className="sticker-btn bg-b2p-blue text-white px-4 py-2 text-sm font-display"
                   >
-                    {deletingId === quiz.id ? "…" : "Supprimer"}
+                    {reopeningId === quiz.id ? "…" : "Réouvrir"}
                   </button>
-                </div>
+                )}
+                {quiz.status === "closed" && !quiz.archived && (
+                  <button
+                    onClick={() => handleArchive(quiz)}
+                    disabled={archivingId === quiz.id}
+                    className="sticker-btn bg-b2p-gold text-b2p-black px-4 py-2 text-sm font-display"
+                  >
+                    {archivingId === quiz.id ? "…" : "Archiver"}
+                  </button>
+                )}
+                {quiz.status === "open" && (
+                  <button
+                    onClick={() => handleClose(quiz)}
+                    disabled={closingId === quiz.id}
+                    className="sticker-btn bg-b2p-black text-white px-4 py-2 text-sm font-display"
+                  >
+                    {closingId === quiz.id ? "…" : "Clôturer"}
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(quiz)}
+                  disabled={deletingId === quiz.id}
+                  className="sticker-btn bg-b2p-red text-white px-4 py-2 text-sm font-display"
+                >
+                  {deletingId === quiz.id ? "…" : "Supprimer"}
+                </button>
               </div>
             </div>
 
