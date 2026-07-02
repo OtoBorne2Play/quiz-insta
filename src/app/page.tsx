@@ -130,7 +130,7 @@ export default function HomePage() {
             <div>
               <p className="font-display text-b2p-blue mb-2">📋 Règles du jeu</p>
               <div className="flex flex-col gap-1.5 text-sm">
-                <p className="rule-row">Réponds à toutes les questions, une par une.</p>
+                <p className="rule-row">Suis la page Insta pour gagner la récompense.</p>
                 <p className="rule-row">Pas de retour en arrière possible une fois validé.</p>
                 <p className="rule-row">Une seule participation par pseudo Instagram.</p>
               </div>
